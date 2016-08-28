@@ -3,7 +3,7 @@
 ## Title: Naminvite
 ## Notes: Addon to auto invite people when they whisper a predetermined keyword.
 ## Author: CruelDrool
-## SavedVariables: naminviteDB
+## SavedVariables: NaminviteDB
 ## X-Category: Chat
 
 Libs\LibStub\LibStub.lua
