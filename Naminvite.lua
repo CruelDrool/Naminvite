@@ -1,22 +1,10 @@
-local addonName, addon = ...
-Naminvite = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0", "LibWho-2.0")
+local addonName = ...
+local addon = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0", "LibWho-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, false)
+-- _G[addonName] = addon -- uncomment for debugging purposes
 
 local LDB = LibStub("LibDataBroker-1.1", true)
 local LDBIcon = LibStub("LibDBIcon-1.0", true)
-
--- local test = _G[addonName]
--- function test:doSomethingCool()
-	-- for k,v in pairs(addon) do
-		-- print(k,v)
-	-- end
-	-- print("Did something")
--- end
-
--- hooksecurefunc(Naminvite,"doSomethingCool", function()
-	-- print("Did something more")
--- end)
--- Naminvite:doSomethingCool()
 
 local defaults = {
 	profile = {
@@ -85,7 +73,7 @@ local function PlayerIsInMyGuild(player)
 end
 
 function MatchKeywords(text)
-	if not Naminvite.db.profile.caseSensitive then
+	if not addon.db.profile.caseSensitive then
 		text = string.lower(text)
 	end
 	local replace = {
@@ -101,7 +89,7 @@ function MatchKeywords(text)
 		"%?",
 		"%$",
 	}
-	for _,v in ipairs(Naminvite.db.profile.keywords) do
+	for _,v in ipairs(addon.db.profile.keywords) do
 		for _, i in ipairs(replace) do
 			v=v:gsub(i,"%%"..i)
 		end
@@ -176,7 +164,7 @@ end
 local function retryInvite(player)
 	for _,v in ipairs(inviteQueue) do
 		if v[1] == player then
-			v[4] = math.floor(GetTime())+Naminvite.db.profile.retryInterval
+			v[4] = math.floor(GetTime())+addon.db.profile.retryInterval
 			return
 		end
 	end
@@ -261,9 +249,9 @@ local function AttemptConvertToRaid()
 end
 
 local function invFromQueue(self, elapsed)
-	if not Naminvite.db.profile.enabled then return end
+	if not addon.db.profile.enabled then return end
 	-- if getQueueSize() == 0 then return end
-	local db = Naminvite.db.profile
+	local db = addon.db.profile
 	local groupSize = db.groupSize
 	local autoConvertThreshold = db.autoConvertThreshold
 
@@ -296,7 +284,7 @@ local function invFromQueue(self, elapsed)
 		invitesRemaining = groupSize - GetNumGroupMembers() - invitedPlayers
 	end
 	
-	Naminvite:UpdateDisplay()
+	addon:UpdateDisplay()
 	
 
 	
@@ -371,12 +359,12 @@ local function invFromQueue(self, elapsed)
 	end
 end
 
-function Naminvite:UpdateDisplay()
+function addon:UpdateDisplay()
 
 end
 
-function Naminvite:OnInitialize()
-	self.db = LibStub("AceDB-3.0"):New("naminviteDB", defaults)
+function addon:OnInitialize()
+	self.db = LibStub("AceDB-3.0"):New(addonName.."DB", defaults)
 
 	self.db.RegisterCallback(self, "OnProfileChanged", "UpdateConfigs")
 	self.db.RegisterCallback(self, "OnProfileCopied", "UpdateConfigs")
@@ -389,7 +377,6 @@ function Naminvite:OnInitialize()
 	-- groupMembers = GetNumGroupMembers()
 	
 	if LDB then
-		-- local LDBObj = LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 		self.LDBObj = LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 			-- type = "launcher",
 			type = "data source",
@@ -416,12 +403,10 @@ function Naminvite:OnInitialize()
 		})
 
 		if LDBIcon then
-			-- LDBIcon:Register(addonName, LDBObj, self.db.profile.minimapIcon)
 			LDBIcon:Register(addonName, self.LDBObj, self.db.profile.minimapIcon)
 		end
 		
-		hooksecurefunc(Naminvite,"UpdateDisplay", function()
-			-- LDBObj.text = getQueueSize()
+		hooksecurefunc(addon,"UpdateDisplay", function()
 			self.LDBObj.text = getQueueSize()
 		end)
 		
@@ -431,16 +416,16 @@ function Naminvite:OnInitialize()
 end
 
 local function filterIncoming(self, event, msg)
-	if not Naminvite.db.profile.enabled then return false end
-	-- if Naminvite.db.profile.guildOnly then return false end
-	local db = Naminvite.db.profile
+	if not addon.db.profile.enabled then return false end
+	-- if addon.db.profile.guildOnly then return false end
+	local db = addon.db.profile
 	-- if (string.find(string.lower(msg), "^"..db.keyword.."$")) then
 		-- return true
 	-- end
 	return MatchKeywords(msg)
 end
 
-function Naminvite:OnEnable()
+function addon:OnEnable()
 	self:RegisterEvent("CHAT_MSG_WHISPER")
 	self:RegisterEvent("CHAT_MSG_BN_WHISPER")
 	self:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -450,32 +435,29 @@ function Naminvite:OnEnable()
 	ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER", filterIncoming)
 	ChatFrame_AddMessageEventFilter("CHAT_MSG_BN_WHISPER", filterIncoming)
 	if LDB and LDBIcon then
-		LDBIcon:Refresh(addonName, Naminvite.db.profile.minimapIcon)
+		LDBIcon:Refresh(addonName, addon.db.profile.minimapIcon)
 	end
 end
 
-function Naminvite:UpdateConfigs()
+function addon:UpdateConfigs()
 	if LDB and LDBIcon then
-		LDBIcon:Refresh(addonName, Naminvite.db.profile.minimapIcon)
+		LDBIcon:Refresh(addonName, addon.db.profile.minimapIcon)
 	end
 	LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
 end
 
-function Naminvite:SetupOptions()
+function addon:SetupOptions()
 
 	self.Options.plugins.profiles = { profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db) }
 	self.Options.name = addonName
 	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable(addonName, self.Options)
 	-- LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, addonName)
-
-	self.Options = nil
 end
 
 
 
-Naminvite.Options = {
+addon.Options = {
 	childGroups = "tree",
-	-- name = "Naminvite",
 	type = "group",
 	plugins = {},
 	args = {
@@ -484,16 +466,16 @@ Naminvite.Options = {
 			type = "toggle",
 			name = L["Enabled"],
 			desc = L["Enable autoinvite"],
-			get = function() return Naminvite.db.profile.enabled end,
-			set = function(info, value) Naminvite.db.profile.enabled = value; end,
+			get = function() return addon.db.profile.enabled end,
+			set = function(info, value) addon.db.profile.enabled = value; end,
 		},
 		minimapIcon = {
 			order = 2,
 			type = "toggle",
 			name = L["Minimap Icon"],
 			desc = L["Show a Icon to open the config at the Minimap"],
-			get = function() return not Naminvite.db.profile.minimapIcon.hide end,
-			set = function(info, value) Naminvite.db.profile.minimapIcon.hide = not value; LDBIcon[value and "Show" or "Hide"](LDBIcon, "Naminvite") end,
+			get = function() return not addon.db.profile.minimapIcon.hide end,
+			set = function(info, value) addon.db.profile.minimapIcon.hide = not value; LDBIcon[value and "Show" or "Hide"](LDBIcon, addonName) end,
 			-- disabled = function() return not LDBIcon end,
 			disabled = function() return not LDBTitan end,
 		},
@@ -519,8 +501,8 @@ Naminvite.Options = {
 							-- type = "input",
 							-- name = L["Keyword"],
 							-- -- desc = L[""],
-							-- get = function() return Naminvite.db.profile.keyword end,
-							-- set = function(info, value) Naminvite.db.profile.keyword = value end,
+							-- get = function() return addon.db.profile.keyword end,
+							-- set = function(info, value) addon.db.profile.keyword = value end,
 							-- -- dialogControl = "NumberEditBox",
 						-- },
 						keywords = {
@@ -530,23 +512,23 @@ Naminvite.Options = {
 							name = L["Keywords"],
 							desc = L["Seperated by comma."],
 							get = function()
-								if table.getn(Naminvite.db.profile.keywords) == 1 then
-									return Naminvite.db.profile.keywords[1]
+								if table.getn(addon.db.profile.keywords) == 1 then
+									return addon.db.profile.keywords[1]
 								else
-									return table.concat(Naminvite.db.profile.keywords,",")
+									return table.concat(addon.db.profile.keywords,",")
 								end
 							end,
 							set = function(info, value)
 								if value == "" then value = L["invite"]..","..L["inv"]; end
 								-- Clear the keywords table.
-								Naminvite.db.profile.keywords = {}
+								addon.db.profile.keywords = {}
 								-- Remove any empty space.
 								value = value:gsub(" ","")
 								-- Replace the commas with empty space for string.gmatch.
 								value = value:gsub(","," ")
 								-- Insert new values into the keywords table.
 								for i in string.gmatch(value,"%S+") do
-									table.insert(Naminvite.db.profile.keywords,i)
+									table.insert(addon.db.profile.keywords,i)
 								end
 
 							end,
@@ -563,8 +545,8 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Case-sensitive"],
 							-- desc = "",
-							get = function() return Naminvite.db.profile.caseSensitive end,
-							set = function(info, value) Naminvite.db.profile.caseSensitive = value; end,
+							get = function() return addon.db.profile.caseSensitive end,
+							set = function(info, value) addon.db.profile.caseSensitive = value; end,
 						},
 						guild = {
 							order = 4,
@@ -572,8 +554,8 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Guild only invites"],
 							-- desc = "",
-							get = function() return Naminvite.db.profile.guildOnly end,
-							set = function(info, value) Naminvite.db.profile.guildOnly = value; end,
+							get = function() return addon.db.profile.guildOnly end,
+							set = function(info, value) addon.db.profile.guildOnly = value; end,
 							disabled = function() return not IsInGuild() end
 						},
 						friends = {
@@ -582,9 +564,9 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Allow friends"],
 							desc = L["Allow those on your Friends List to be invited when Guild only invites are enabled."],
-							get = function() return Naminvite.db.profile.friendsAllowed end,
-							set = function(info, value) Naminvite.db.profile.friendsAllowed = value; end,
-							-- disabled = function() return not Naminvite.db.profile.guildOnly end
+							get = function() return addon.db.profile.friendsAllowed end,
+							set = function(info, value) addon.db.profile.friendsAllowed = value; end,
+							-- disabled = function() return not addon.db.profile.guildOnly end
 						},
 						crossrealm = {
 							order = 6,
@@ -592,9 +574,9 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Crossrealm"],
 							desc = L["Allow invites from Battle.net Whispers."],
-							get = function() return Naminvite.db.profile.crossRealm end,
-							set = function(info, value) Naminvite.db.profile.crossRealm = value; end,
-							disabled = function() return not Naminvite.db.profile.friendsAllowed end
+							get = function() return addon.db.profile.crossRealm end,
+							set = function(info, value) addon.db.profile.crossRealm = value; end,
+							disabled = function() return not addon.db.profile.friendsAllowed end
 						},
 						limitgroupsize = {
 							order = 7,
@@ -602,8 +584,8 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Limit group size"],
 							desc = L["Set the maximum size of your group"],
-							get = function() return Naminvite.db.profile.limitGroupSize end,
-							set = function(info, value) Naminvite.db.profile.limitGroupSize = value; end,
+							get = function() return addon.db.profile.limitGroupSize end,
+							set = function(info, value) addon.db.profile.limitGroupSize = value; end,
 						},
 						groupsize = {
 							order = 8,
@@ -611,9 +593,9 @@ Naminvite.Options = {
 							desc = L["Maximum number of people in a group."],
 							type = "range",
 							min = 2, max = 40, step = 1,
-							get = function() return Naminvite.db.profile.groupSize end,
-							set = function(info, value) Naminvite.db.profile.groupSize = value end,
-							disabled = function() return not Naminvite.db.profile.limitGroupSize end,
+							get = function() return addon.db.profile.groupSize end,
+							set = function(info, value) addon.db.profile.groupSize = value end,
+							disabled = function() return not addon.db.profile.limitGroupSize end,
 						},
 						spacer4 = {
 							order = 9,
@@ -626,9 +608,9 @@ Naminvite.Options = {
 							type = "toggle",
 							width = "full",
 							name = L["Auto convert to raid"],
-							get = function() return Naminvite.db.profile.autoConvertToRaid end,
-							set = function(info, value) Naminvite.db.profile.autoConvertToRaid = value; end,
-							disabled = function() return not Naminvite.db.profile.limitGroupSize end,
+							get = function() return addon.db.profile.autoConvertToRaid end,
+							set = function(info, value) addon.db.profile.autoConvertToRaid = value; end,
+							disabled = function() return not addon.db.profile.limitGroupSize end,
 						},
 						autoconvertonlyoverfive = {
 							order = 11,
@@ -636,9 +618,9 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Only if group size is over 5"],
 							desc = L["Will ignore the setting for threshold."],
-							get = function() return Naminvite.db.profile.autoConvertOnlyOverFive end,
-							set = function(info, value) Naminvite.db.profile.autoConvertOnlyOverFive = value; end,
-							disabled = function() return not Naminvite.db.profile.limitGroupSize or not Naminvite.db.profile.autoConvertToRaid end,
+							get = function() return addon.db.profile.autoConvertOnlyOverFive end,
+							set = function(info, value) addon.db.profile.autoConvertOnlyOverFive = value; end,
+							disabled = function() return not addon.db.profile.limitGroupSize or not addon.db.profile.autoConvertToRaid end,
 						},
 
 						threshold = {
@@ -647,11 +629,11 @@ Naminvite.Options = {
 							desc = L["If group size is larger than this threshold then the party will be converted into a raid."],
 							type = "range",
 							min = 1, max = 5, step = 1,
-							get = function() return Naminvite.db.profile.autoConvertThreshold end,
+							get = function() return addon.db.profile.autoConvertThreshold end,
 							set = function(info, value)
-								Naminvite.db.profile.autoConvertThreshold = value
+								addon.db.profile.autoConvertThreshold = value
 							end,
-							disabled = function() return not Naminvite.db.profile.autoConvertToRaid or not Naminvite.db.profile.limitGroupSize end,
+							disabled = function() return not addon.db.profile.autoConvertToRaid or not addon.db.profile.limitGroupSize end,
 						},
 					},
 				},
@@ -667,8 +649,8 @@ Naminvite.Options = {
 							width = "full",
 							name = L["Check level"],
 							desc = string.format(L["Check the level of the players whispering you for an invite. Recommened when you are attempting to make a raid (or you are already in one) to avoid attempted invites of players below level %s."],MIN_RAID_LEVEL),
-							get = function() return Naminvite.db.profile.checkLevel end,
-							set = function(info, value) Naminvite.db.profile.checkLevel = value; end,
+							get = function() return addon.db.profile.checkLevel end,
+							set = function(info, value) addon.db.profile.checkLevel = value; end,
 						},
 						minlevel = {
 							order = 2,
@@ -676,19 +658,19 @@ Naminvite.Options = {
 							desc = string.format(L["Require a minimum level in order to get invited. In a raid group this setting will be ignored if set below %s."],MIN_RAID_LEVEL),
 							type = "range",
 							min = 1, max = MAX_PLAYER_LEVEL, step = 1,
-							get = function() return Naminvite.db.profile.minLevel end,
+							get = function() return addon.db.profile.minLevel end,
 							set = function(info, value)
-								-- if value <= Naminvite.db.profile.maxLevel then
-									-- Naminvite.db.profile.minLevel = value
+								-- if value <= addon.db.profile.maxLevel then
+									-- addon.db.profile.minLevel = value
 								-- else
-									-- Naminvite.db.profile.minLevel = Naminvite.db.profile.maxLevel
+									-- addon.db.profile.minLevel = addon.db.profile.maxLevel
 								-- end
-								if value >= Naminvite.db.profile.maxLevel then
-									Naminvite.db.profile.maxLevel = value
+								if value >= addon.db.profile.maxLevel then
+									addon.db.profile.maxLevel = value
 								end
-								Naminvite.db.profile.minLevel = value
+								addon.db.profile.minLevel = value
 							end,
-							disabled = function() return not Naminvite.db.profile.checkLevel end
+							disabled = function() return not addon.db.profile.checkLevel end
 						},
 						spacer1 = {
 							order = 3,
@@ -702,20 +684,20 @@ Naminvite.Options = {
 							desc = string.format(L["The maximum level a player can be. In a raid group this setting will be ignored if set below %s."],MIN_RAID_LEVEL),
 							type = "range",
 							min = 1, max = MAX_PLAYER_LEVEL, step = 1,
-							get = function() return Naminvite.db.profile.maxLevel end,
+							get = function() return addon.db.profile.maxLevel end,
 							set = function(info, value)
-							-- Naminvite.Options.args.general.args.level.args.minlevel.get()
-								-- if value >= Naminvite.db.profile.minLevel then
-									-- Naminvite.db.profile.maxLevel = value
+							-- addon.Options.args.general.args.level.args.minlevel.get()
+								-- if value >= addon.db.profile.minLevel then
+									-- addon.db.profile.maxLevel = value
 								-- else
-									-- Naminvite.db.profile.maxLevel = Naminvite.db.profile.minLevel
+									-- addon.db.profile.maxLevel = addon.db.profile.minLevel
 								-- end
-								if value <= Naminvite.db.profile.minLevel then
-									Naminvite.db.profile.minLevel = value
+								if value <= addon.db.profile.minLevel then
+									addon.db.profile.minLevel = value
 								end
-								Naminvite.db.profile.maxLevel = value
+								addon.db.profile.maxLevel = value
 							end,
-							disabled = function() return not Naminvite.db.profile.checkLevel end
+							disabled = function() return not addon.db.profile.checkLevel end
 						},
 					}
 				},
@@ -731,8 +713,8 @@ Naminvite.Options = {
 							type = "toggle",
 							name = L["Auto join"],
 							desc = L["Auto accept group invitations from guild members and friends."],
-							get = function() return Naminvite.db.profile.autoJoin end,
-							set = function(info, value) Naminvite.db.profile.autoJoin = value; end,
+							get = function() return addon.db.profile.autoJoin end,
+							set = function(info, value) addon.db.profile.autoJoin = value; end,
 						}
 					}
 				}
@@ -741,7 +723,7 @@ Naminvite.Options = {
 	}
 }
 
-function Naminvite:ChatMsgWhisper(player, level)
+function addon:ChatMsgWhisper(player, level)
 	local db = self.db.profile
 	if UnitIsGroupLeader("player") or (UnitIsGroupAssistant("player") and IsInRaid()) or GetNumGroupMembers() == 0 then
 		local attemptInvite = false
@@ -788,7 +770,7 @@ function Naminvite:ChatMsgWhisper(player, level)
 	end
 end
 
-function Naminvite:UserDataReturned(user)
+function addon:UserDataReturned(user)
 	if user then
 		-- Data returned. Continue.
 		if not user.Online then return end
@@ -796,7 +778,7 @@ function Naminvite:UserDataReturned(user)
 	end
 end
 
-function Naminvite:CHAT_MSG_WHISPER(_, msg, player)
+function addon:CHAT_MSG_WHISPER(_, msg, player)
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	player = player:gsub("-"..GetRealmName(),"")
@@ -845,7 +827,7 @@ function Naminvite:CHAT_MSG_WHISPER(_, msg, player)
 	end
 end
 
-function Naminvite:CHAT_MSG_BN_WHISPER(_, msg, ...)
+function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	
@@ -871,7 +853,7 @@ function Naminvite:CHAT_MSG_BN_WHISPER(_, msg, ...)
 			local index = BNGetFriendIndex(presenceID)
 			
 			if index then
-				local numToons = BNGetNumFriendToons(index)
+				local numToons = BNGetNumFriendGameAccounts(index)
 				
 				if numToons > 0 then
 				-- see if there is exactly one toon we could invite
@@ -881,7 +863,7 @@ function Naminvite:CHAT_MSG_BN_WHISPER(_, msg, ...)
 					local playerLevel
 					
 					for i = 1, numToons do
-						local _, toonName, client, realm, realmID, faction, _, _, _, _, level, _, _, _, _, toonID = BNGetFriendToonInfo(index, i);
+						local _, toonName, client, realm, realmID, faction, _, _, _, _, level, _, _, _, _, toonID = BNGetFriendGameAccountInfo(index, i);
 						if client == BNET_CLIENT_WOW and faction == UnitFactionGroup("player") and realmID ~= 0 then
 							numValidToons = numValidToons + 1
 							lastToonID = toonID
@@ -940,7 +922,7 @@ function Naminvite:CHAT_MSG_BN_WHISPER(_, msg, ...)
 	end
 end
 
-function Naminvite:GROUP_ROSTER_UPDATE()
+function addon:GROUP_ROSTER_UPDATE()
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	
@@ -957,7 +939,7 @@ function Naminvite:GROUP_ROSTER_UPDATE()
 	
 end
 
-function Naminvite:CHAT_MSG_SYSTEM(_, msg)
+function addon:CHAT_MSG_SYSTEM(_, msg)
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	local pattern = "(.+)"
@@ -1067,7 +1049,7 @@ end
 	print(15, arg15)
 	print(16, arg16)
 ]]--
-function Naminvite:PARTY_INVITE_REQUEST(_, sender)
+function addon:PARTY_INVITE_REQUEST(_, sender)
 	-- if not self.db.profile.enabled then return end
 	if not self.db.profile.autoJoin then return end
 	print(sender)
