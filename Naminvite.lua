@@ -22,7 +22,7 @@ local defaults = {
 		retryInterval = 10,
 		guildOnly = true,
 		friendsAllowed = true,
-		crossRealm = true,
+		BNetWhispers = true,
 		autoConvertToRaid = true,
 		autoConvertThreshold = 5,
 		autoConvertOnlyOverFive = true,
@@ -183,7 +183,7 @@ local function clearQueue()
 	inviteQueue = {}
 end
 
-local function DoConvertToRaid()
+local function ForceConvertToRaid()
 	for i=1,GetNumGroupMembers()-1 do
 		local unit = "party"..i
 		local level = UnitLevel(unit)
@@ -341,7 +341,7 @@ local function invFromQueue(self, elapsed)
 			end
 			
 			if not v[2] and invitesRemaining > 0 then
-				if v[5] then -- Crossrealm
+				if v[5] then -- BNetWhispers
 					BNInviteFriend(v[5])
 				else
 					InviteUnit(v[1])
@@ -568,17 +568,17 @@ addon.Options = {
 							desc = L["Allow those on your Friends List to be invited when Guild only invites are enabled."],
 							get = function() return addon.db.profile.friendsAllowed end,
 							set = function(info, value) addon.db.profile.friendsAllowed = value; end,
-							-- disabled = function() return not addon.db.profile.guildOnly end
+							disabled = function() return not addon.db.profile.guildOnly end
 						},
-						crossrealm = {
+						BNetWhispers = {
 							order = 6,
 							type = "toggle",
 							width = "full",
-							name = L["Crossrealm"],
+							name = L["Battle.net Whispers"],
 							desc = L["Allow invites from Battle.net Whispers."],
-							get = function() return addon.db.profile.crossRealm end,
-							set = function(info, value) addon.db.profile.crossRealm = value; end,
-							disabled = function() return not addon.db.profile.friendsAllowed end
+							get = function() return addon.db.profile.BNetWhispers end,
+							set = function(info, value) addon.db.profile.BNetWhispers = value; end,
+							disabled = function() return not addon.db.profile.friendsAllowed or not addon.db.profile.guildOnly end
 						},
 						limitgroupsize = {
 							order = 7,
@@ -731,8 +731,6 @@ function addon:ChatMsgWhisper(player, level)
 		local attemptInvite = false
 		
 		if db.guildOnly and IsInGuild() then
-			-- if ( UnitIsInMyGuild(player) or (db.friendsAllowed and PlayerIsFriend(player)) ) then
-			-- WTF happened to UnitIsInMyGuild?
 			if PlayerIsInMyGuild(player) or (db.friendsAllowed and PlayerIsFriend(player)) then
 				attemptInvite = true
 			end
@@ -834,7 +832,7 @@ function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 	local db = self.db.profile
 	
 	if db.guildOnly and not db.friendsAllowed then return end
-	if not db.crossRealm then return end
+	if not db.BNetWhispers then return end
 	
 	local _, _, _, _, _, _, _, _, _, _, _, presenceID = ...
 	
@@ -1054,7 +1052,6 @@ end
 function addon:PARTY_INVITE_REQUEST(_, sender)
 	-- if not self.db.profile.enabled then return end
 	if not self.db.profile.autoJoin then return end
-	print(sender)
 	if PlayerIsInMyGuild(sender) or PlayerIsFriend(sender) then
 		AcceptGroup()
 		for i=1, STATICPOPUP_NUMDIALOGS do
