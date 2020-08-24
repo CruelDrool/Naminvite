@@ -16,7 +16,7 @@ assert(LibStub, "LibWho-2.0 requires LibStub")
 
 
 local major_version = 'LibWho-2.0'
-local minor_version = tonumber(("2.0.179"):match("%d+%.%d+%.(%d+)")) or 99999
+local minor_version = tonumber(("2.0.178"):match("%d+%.%d+%.(%d+)")) or 99999
 
 local lib = LibStub:NewLibrary(major_version, minor_version)
 
@@ -25,7 +25,6 @@ if not lib then
 	return	-- already loaded and no upgrade necessary
 end
 
--- todo: localizations
 lib.callbacks = lib.callbacks or LibStub("CallbackHandler-1.0"):New(lib)
 local callbacks = lib.callbacks
 
@@ -337,14 +336,13 @@ end
 
 function lib:CancelPendingWhoNext()
 	lib['frame']:Hide()
-	lib.readyForNext = false
 end
 
 lib['frame']:SetScript("OnUpdate", function(frame, elapsed)
 	lib.Timeout_time = lib.Timeout_time - elapsed
 	if lib.Timeout_time <= 0 then
 		lib['frame']:Hide()
-		lib.readyForNext = true
+		lib:AskWhoNext()
 	end -- if
 end);
 
@@ -409,11 +407,11 @@ end
 lib.queue_bounds = queue_bounds
 
 function lib:AskWhoNext()
-	if lib.frame:IsShown() or not self.readyForNext then
-		dbg("Already waiting or not processing")
+	if lib.frame:IsShown() then 
+		dbg("Already waiting")
 		return 
 	end
-	self.readyForNext = false
+
 	self:CancelPendingWhoNext()
 
 	if self.WhoInProgress then
@@ -497,8 +495,8 @@ function lib:AskWho(args)
 	tinsert(self.Queue[args.queue], args)
 	dbg('[' .. args.queue .. '] added "' .. args.query .. '", queues=' .. #self.Queue[1] .. '/'.. #self.Queue[2] .. '/'.. #self.Queue[3])
 	self:TriggerEvent('WHOLIB_QUERY_ADDED')
-
-	self.readyForNext = true
+	
+	self:AskWhoNext()
 end
 
 function lib:ReturnWho()
