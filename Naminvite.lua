@@ -33,7 +33,7 @@ local defaults = {
 	}
 }
 
-local MIN_RAID_LEVEL = SHOW_PVP_LEVEL
+local MIN_RAID_LEVEL = 10
 local invitesRemaining
 
 -- local groupMembers
@@ -853,7 +853,7 @@ function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 			local index = BNGetFriendIndex(presenceID)
 			
 			if index then
-				local numToons = BNGetNumFriendGameAccounts(index)
+				local numToons = C_BattleNet.GetFriendNumGameAccounts(index)
 				
 				if numToons > 0 then
 				-- see if there is exactly one toon we could invite
@@ -863,7 +863,7 @@ function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 					local playerLevel
 					
 					for i = 1, numToons do
-						local _, toonName, client, realm, realmID, faction, _, _, _, _, level, _, _, _, _, toonID = BNGetFriendGameAccountInfo(index, i);
+						local _, toonName, client, realm, realmID, faction, _, _, _, _, level, _, _, _, _, toonID = C_BattleNet.GetFriendGameAccountInfo(index, i);
 						if client == BNET_CLIENT_WOW and faction == UnitFactionGroup("player") and realmID ~= 0 then
 							numValidToons = numValidToons + 1
 							lastToonID = toonID
