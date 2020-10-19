@@ -344,7 +344,7 @@ local function invFromQueue(self, elapsed)
 				if v[5] then -- BNetWhispers
 					BNInviteFriend(v[5])
 				else
-					InviteUnit(v[1])
+					C_PartyInfo.InviteUnit(v[1])
 				end
 				v[2] = true
 				
