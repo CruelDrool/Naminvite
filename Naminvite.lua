@@ -42,13 +42,11 @@ inviteQueue = {}
 
 local function PlayerIsFriend(player)
 	if not player then return false end
-	local _, numFriendsOnline = GetNumFriends()
-
-	if numFriendsOnline > 0 then
-		local name
-		for i = 1, numFriendsOnline do
-			name = GetFriendInfo(i)
-			if name == player then
+	local numFriends = C_FriendList.GetNumFriends()
+	if numFriends > 0 then
+		for i = 1, numFriends do
+			local info = C_FriendList.GetFriendInfoByIndex(i)
+			if info.name == player then
 				return true
 			end
 		end
