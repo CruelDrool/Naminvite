@@ -948,6 +948,11 @@ function addon:CHAT_MSG_SYSTEM(_, msg)
 	if match then
 		removeFromQueue(player)
 	end
+	
+	match, _, player = string.find(msg,ERR_RAID_MEMBER_ADDED_S:gsub("%%s", pattern))
+	if match then
+		removeFromQueue(player)
+	end
 
 	match, _, player = string.find(msg,ERR_ALREADY_IN_GROUP_S:gsub("%%s", pattern))
 	if match then
