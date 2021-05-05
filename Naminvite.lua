@@ -189,7 +189,7 @@ local function ForceConvertToRaid()
 			UninviteUnit(unit)
 		end
 	end
-	ConvertToRaid()
+	C_PartyInfo.ConvertToRaid()
 end
 
 	--[[
@@ -242,7 +242,7 @@ local function AttemptConvertToRaid()
 			end
 		end
 	else
-		ConvertToRaid()
+		C_PartyInfo.ConvertToRaid()
 	end
 end
 
@@ -289,7 +289,7 @@ local function invFromQueue(self, elapsed)
 	-- if db.autoConvertToRaid and db.limitGroupSize and UnitIsGroupLeader("player") and not IsInRaid() and not HasLFGRestrictions() and (GetNumGroupMembers() + invitedPlayers >= autoConvertThreshold and groupSize > autoConvertThreshold) then
 	-- if db.autoConvertToRaid and db.limitGroupSize and UnitIsGroupLeader("player") and not IsInRaid() and not HasLFGRestrictions() and (GetNumGroupMembers() + getQueueSize() >= autoConvertThreshold and groupSize > autoConvertThreshold) then
 	if db.autoConvertToRaid and db.limitGroupSize and UnitIsGroupLeader("player") and not IsInRaid() and not HasLFGRestrictions() and (GetNumGroupMembers() + getQueueSize() > autoConvertThreshold and groupSize > autoConvertThreshold) then
-		-- ConvertToRaid()
+		-- C_PartyInfo.ConvertToRaid()
 		-- Stop inviting until it's a raid. Check if you can convert (check for those under level 10).
 		-- Send out a whisper to the unlucky sod that doesn't get an invite until the it's a raid?
 		if not self.pause then
@@ -1016,7 +1016,7 @@ function addon:CHAT_MSG_SYSTEM(_, msg)
 		-- local _,_,player = string.find(msg,JOINED_PARTY:gsub("%%s", "(.+)"))
 		-- removeFromQueue(player)
 		-- -- if  UnitIsGroupLeader("player") and not IsInRaid() and db.autoConvertToRaid and (GetNumGroupMembers() >= db.autoConvertThreshold and db.groupSize > db.autoConvertThreshold) then
-			-- -- ConvertToRaid()
+			-- -- C_PartyInfo.ConvertToRaid()
 		-- -- end
 	-- end
 	-- if string.find(msg,ERR_ALREADY_IN_GROUP_S:gsub("%%s", "(.+)")) then 
