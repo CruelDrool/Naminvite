@@ -863,7 +863,7 @@ function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 					for i = 1, numToons do
 						-- local _, toonName, client, realm, realmID, faction, _, _, _, _, level, _, _, _, _, toonID = C_BattleNet.GetFriendGameAccountInfo(index, i);
 						local info = C_BattleNet.GetFriendGameAccountInfo(index, i)
-						if info.clientProgram == BNET_CLIENT_WOW and info.factionName == UnitFactionGroup("player") and info.realmID ~= 0 then
+						if info.clientProgram == BNET_CLIENT_WOW and info.realmID ~= 0 then
 							numValidToons = numValidToons + 1
 							lastToonID = info.gameAccountID
 							playerLevel = tonumber(info.characterLevel)
@@ -894,7 +894,7 @@ function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 								return
 							end
 						end
-						print(player)
+						-- print(player)
 						addToQueue(player,lastToonID,presenceID)
 
 						if invitesRemaining <= 0 then
