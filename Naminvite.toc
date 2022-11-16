@@ -1,4 +1,4 @@
-## Interface: 100000
+## Interface: 100002
 ## Version: 1.0
 ## Title: Naminvite
 ## Notes: Addon to auto invite people when they whisper a predetermined keyword.
