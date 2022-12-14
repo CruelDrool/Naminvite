@@ -1,5 +1,5 @@
 local addonName = ...
-local addon = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0", "LibWho-2.0")
+local addon = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0", "AceHook-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, false)
 -- _G[addonName] = addon -- uncomment for debugging purposes
 
@@ -38,7 +38,7 @@ local invitesRemaining
 
 -- local groupMembers
 -- local inviteQueue = {}
-inviteQueue = {}
+local inviteQueue = {}
 
 local function PlayerIsFriend(player)
 	if not player then return false end
@@ -723,59 +723,6 @@ addon.Options = {
 	}
 }
 
-function addon:ChatMsgWhisper(player, level)
-	local db = self.db.profile
-	if UnitIsGroupLeader("player") or (UnitIsGroupAssistant("player") and IsInRaid()) or GetNumGroupMembers() == 0 then
-		local attemptInvite = false
-		
-		if db.guildOnly and IsInGuild() then
-			if PlayerIsInMyGuild(player) or (db.friendsAllowed and PlayerIsFriend(player)) then
-				attemptInvite = true
-			end
-		else
-			attemptInvite = true
-		end
-		
-		if not attemptInvite then return end
-		
-		if db.checkLevel and level then
-			
-			if level < db.minLevel or level > db.maxLevel then
-				if db.minLevel == db.maxLevel then
-					SendChatMessage(string.format(L["Only those at level %s will be invited to this group."],db.minLevel), "WHISPER", nil, player)
-				else
-					SendChatMessage(string.format(L["Only those between level %s and %s will be invited to this group."],db.minLevel,db.maxLevel), "WHISPER", nil, player)
-				end
-				return
-			end
-			
-			if (IsInRaid() or (db.autoConvertToRaid and db.limitGroupSize and not db.autoConvertOnlyOverFive and db.groupSize > db.autoConvertThreshold or (db.autoConvertToRaid and db.limitGroupSize and db.autoConvertOnlyOverFive and db.groupSize > 5))) and level < MIN_RAID_LEVEL then
-				-- if statement of doom.
-				SendChatMessage(string.format(L["You need to be at least level %s to be invited to a raid group."],MIN_RAID_LEVEL), "WHISPER", nil, player)
-				return
-			end
-		end
-					
-		addToQueue(player)
-
-		if invitesRemaining <= 0 then
-			local numberInQueue = spotInQueue(player)
-			if self.OnUpdate.pause then
-				self.OnUpdate.lastAdded = numberInQueue
-			end
-			SendChatMessage(string.format(L["The group is full but you have been added to the queue as #%s."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
-		end
-	end
-end
-
-function addon:UserDataReturned(user)
-	if user then
-		-- Data returned. Continue.
-		if not user.Online then return end
-		self:ChatMsgWhisper(user.Name, user.Level)
-	end
-end
-
 function addon:CHAT_MSG_WHISPER(_, msg, player)
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
@@ -784,11 +731,11 @@ function addon:CHAT_MSG_WHISPER(_, msg, player)
 	if MatchKeywords(msg) then
 		if UnitInParty(player) then
 			SendChatMessage(L["You are already in my group!"], "WHISPER", nil, player)
-			return 
+			return
 		end
-				
+
 		local playerIsInQueue, invited, numberInQueue = isInQueue(player)
-		
+
 		if playerIsInQueue then
 			if not invited then
 				SendChatMessage(string.format(L["You are #%s in the queue."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
@@ -797,17 +744,31 @@ function addon:CHAT_MSG_WHISPER(_, msg, player)
 			end
 			return
 		end
-		
-		local userInfo
-		local level
-		if db.checkLevel then
-			userInfo = self:UserInfo(player, {callback='UserDataReturned', timeout=10})
-			if not userInfo then return	end -- No data returned from cache. Will return and let the callback-function call to ChatMsgWhisper.
-			level = userInfo.Level
+
+		if UnitIsGroupLeader("player") or (UnitIsGroupAssistant("player") and IsInRaid()) or GetNumGroupMembers() == 0 then
+			local attemptInvite = false
+
+			if db.guildOnly and IsInGuild() then
+				if PlayerIsInMyGuild(player) or (db.friendsAllowed and PlayerIsFriend(player)) then
+					attemptInvite = true
+				end
+			else
+				attemptInvite = true
+			end
+
+			if not attemptInvite then return end
+
+			addToQueue(player)
+
+			if invitesRemaining <= 0 then
+				local numInQueue = spotInQueue(player)
+				if self.OnUpdate.pause then
+					self.OnUpdate.lastAdded = numInQueue
+				end
+				SendChatMessage(string.format(L["The group is full but you have been added to the queue as #%s."], numInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
+			end
 		end
 
-		self:ChatMsgWhisper(player, level)
-		
 	elseif (string.find(string.lower(msg), "^"..db.removeKeyword.."$")) then
 		if UnitInParty(player) then
 			SendChatMessage(L["Leave the group."], "WHISPER", nil, player)
@@ -898,11 +859,11 @@ function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
 						addToQueue(player,lastToonID,presenceID)
 
 						if invitesRemaining <= 0 then
-							local numberInQueue = BNspotInQueue(presenceID)
+							local numInQueue = BNspotInQueue(presenceID)
 							if self.OnUpdate.pause then
-								self.OnUpdate.lastAdded = numberInQueue
+								self.OnUpdate.lastAdded = numInQueue
 							end
-							BNSendWhisper(presenceID,string.format(L["The group is full but you have been added to the queue as #%s."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword))
+							BNSendWhisper(presenceID,string.format(L["The group is full but you have been added to the queue as #%s."], numInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword))
 						end
 					end
 				end
