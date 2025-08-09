@@ -1,9 +1,10 @@
 ## Interface: 100207
-## Version: 1.0
+## Version: 1.0.0
 ## Title: Naminvite
 ## Notes: Addon to auto invite people when they whisper a predetermined keyword.
 ## Author: CruelDrool
 ## SavedVariables: NaminviteDB
+## IconTexture: Interface\LFGFRAME\UI-LFR-PORTRAIT
 ## X-Category: Chat
 
 Libs\LibStub\LibStub.lua

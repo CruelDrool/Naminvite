@@ -29,7 +29,9 @@ local defaults = {
 		limitGroupSize = false,
 		groupSize = 5,
 		autoJoin = true,
-		minimapIcon = {}
+		minimapIcon = {
+			showInCompartment = true,
+		}
 	}
 }
 
@@ -397,7 +399,7 @@ function addon:OnInitialize()
 					end
 				end
 			end,
-			icon = "Interface\\LFGFRAME\\UI-LFR-PORTRAIT",
+			icon = C_AddOns.GetAddOnMetadata(addonName, "IconTexture"),
 			OnTooltipShow = function(tooltip)
 				if not tooltip or not tooltip.AddLine then return end
 				tooltip:AddLine(addonName)
