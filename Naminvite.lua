@@ -40,33 +40,31 @@ local invitesRemaining
 -- local inviteQueue = {}
 local inviteQueue = {}
 
-local function PlayerIsFriend(player)
-	if not player then return false end
+local function PlayerIsFriend(guid)
+	if not guid then return false end
 	local numFriends = C_FriendList.GetNumFriends()
 	if numFriends > 0 then
 		for i = 1, numFriends do
 			local info = C_FriendList.GetFriendInfoByIndex(i)
-			if info.name == player then
+			if info.guid == guid then
 				return true
 			end
 		end
 	end
-	
+
 	return false
 end
 
-local function PlayerIsInMyGuild(player)
-	if not player then return false end
-	for i=1, GetNumGuildMembers() do 
-		local name = GetGuildRosterInfo(i)
-			if name then
-			name = name:gsub("-"..GetRealmName(),"")
-			if name == player then 
-				return true
-			end
+-- Just in-case Blizzard change their minds. It happens!
+local IsGuildMember = _G.IsGuildMember or function(guid)
+	if not guid then return false end
+	for i=1, GetNumGuildMembers() do
+		local memberGUID = select(17, GetGuildRosterInfo(i))
+		if memberGUID and memberGUID == guid then
+			return true
 		end
 	end
-	
+
 	return false
 end
 
@@ -246,8 +244,13 @@ local function AttemptConvertToRaid()
 	end
 end
 
+local prevInvFromQueueRun = GetTime()
+
 local function invFromQueue(self, elapsed)
 	if not addon.db.profile.enabled then return end
+	local now = GetTime()
+	if not (prevInvFromQueueRun < now - 1) then return end
+	prevInvFromQueueRun = now
 	-- if getQueueSize() == 0 then return end
 	local db = addon.db.profile
 	local groupSize = db.groupSize
@@ -723,7 +726,7 @@ addon.Options = {
 	}
 }
 
-function addon:CHAT_MSG_WHISPER(_, msg, player)
+function addon:CHAT_MSG_WHISPER(event, msg, player, languageName, channelName, playerName2, specialFlags, zoneChannelID, channelIndex, channelBaseName, languageID, lineID, guid, bnSenderID, isMobile, isSubtitle, hideSenderInLetterbox, supressRaidIcons)
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	player = player:gsub("-"..GetRealmName(),"")
@@ -749,7 +752,7 @@ function addon:CHAT_MSG_WHISPER(_, msg, player)
 			local attemptInvite = false
 
 			if db.guildOnly and IsInGuild() then
-				if PlayerIsInMyGuild(player) or (db.friendsAllowed and PlayerIsFriend(player)) then
+				if IsGuildMember(guid) or (db.friendsAllowed and PlayerIsFriend(guid)) then
 					attemptInvite = true
 				end
 			else
@@ -1014,19 +1017,15 @@ end
 	print(15, arg15)
 	print(16, arg16)
 ]]--
-function addon:PARTY_INVITE_REQUEST(_, sender)
+function addon:PARTY_INVITE_REQUEST(event, player, isTank, isHealer, isDamage, isNativeRealm, allowMultipleRoles, guid, questSessionActive)
 	-- if not self.db.profile.enabled then return end
 	if not self.db.profile.autoJoin then return end
-	if PlayerIsInMyGuild(sender) or PlayerIsFriend(sender) then
+	if IsGuildMember(guid) or PlayerIsFriend(guid) then
 		AcceptGroup()
-		for i=1, STATICPOPUP_NUMDIALOGS do
-			local popup = _G["StaticPopup"..i]
-			if popup.which == "PARTY_INVITE" or popup.which == "PARTY_INVITE_XREALM" then
-				popup.inviteAccepted = 1
-				StaticPopup_Hide("PARTY_INVITE")
-				return
-			end
+		local popup = StaticPopup_FindVisible("PARTY_INVITE")
+		if popup then
+			popup.inviteAccepted = 1
+			StaticPopup_Hide("PARTY_INVITE")
 		end
 	end
 end
-
