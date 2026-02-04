@@ -910,6 +910,8 @@ function addon:GROUP_ROSTER_UPDATE()
 end
 
 function addon:CHAT_MSG_SYSTEM(_, msg)
+	if issecretvalue(msg) then return end
+
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	local pattern = "(.+)"
