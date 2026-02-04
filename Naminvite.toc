@@ -1,4 +1,4 @@
-## Interface: 110200
+## Interface: 120000, 120001, 120002, 120005, 120007, 120100, 120105, 120107, 120200, 120205, 120207
 ## Version: 1.0.0
 ## Title: Naminvite
 ## Notes: Addon to auto invite people when they whisper a predetermined keyword.

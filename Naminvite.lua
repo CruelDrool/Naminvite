@@ -316,7 +316,7 @@ local function invFromQueue(self, elapsed)
 				BNSendWhisper(presenceID,string.format(L["You are #%s in the queue."],BNspotInQueue(presenceID)).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword))
 			else
 				local player = user[1]
-				SendChatMessage(string.format(L["You are #%s in the queue."],spotInQueue(player)).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)			
+				C_ChatInfo.SendChatMessage(string.format(L["You are #%s in the queue."],spotInQueue(player)).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)			
 			end
 			
 			self.lastAdded = lastAdded
@@ -729,13 +729,15 @@ addon.Options = {
 }
 
 function addon:CHAT_MSG_WHISPER(event, msg, player, languageName, channelName, playerName2, specialFlags, zoneChannelID, channelIndex, channelBaseName, languageID, lineID, guid, bnSenderID, isMobile, isSubtitle, hideSenderInLetterbox, supressRaidIcons)
+	if issecretvalue(msg) or issecretvalue(player) or issecretvalue(guid) then return end
+
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
 	player = player:gsub("-"..GetRealmName(),"")
 	-- if (string.find(string.lower(msg), "^"..db.keyword.."$")) then
 	if MatchKeywords(msg) then
 		if UnitInParty(player) then
-			SendChatMessage(L["You are already in my group!"], "WHISPER", nil, player)
+			C_ChatInfo.SendChatMessage(L["You are already in my group!"], "WHISPER", nil, player)
 			return
 		end
 
@@ -743,9 +745,9 @@ function addon:CHAT_MSG_WHISPER(event, msg, player, languageName, channelName, p
 
 		if playerIsInQueue then
 			if not invited then
-				SendChatMessage(string.format(L["You are #%s in the queue."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
+				C_ChatInfo.SendChatMessage(string.format(L["You are #%s in the queue."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
 			else
-				SendChatMessage(L["Accept the group invitation, please."], "WHISPER", nil, player)
+				C_ChatInfo.SendChatMessage(L["Accept the group invitation, please."], "WHISPER", nil, player)
 			end
 			return
 		end
@@ -770,45 +772,48 @@ function addon:CHAT_MSG_WHISPER(event, msg, player, languageName, channelName, p
 				if self.OnUpdate.pause then
 					self.OnUpdate.lastAdded = numInQueue
 				end
-				SendChatMessage(string.format(L["The group is full but you have been added to the queue as #%s."], numInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
+				C_ChatInfo.SendChatMessage(string.format(L["The group is full but you have been added to the queue as #%s."], numInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword), "WHISPER", nil, player)
 			end
 		end
 
 	elseif (string.find(string.lower(msg), "^"..db.removeKeyword.."$")) then
 		if UnitInParty(player) then
-			SendChatMessage(L["Leave the group."], "WHISPER", nil, player)
+			C_ChatInfo.SendChatMessage(L["Leave the group."], "WHISPER", nil, player)
 			return
 		end
 		local playerIsInQueue, invited = isInQueue(player)
 		if playerIsInQueue then
 			if not invited then
 				removeFromQueue(player)
-				SendChatMessage(L["You have been removed from the queue."], "WHISPER", nil, player)
+				C_ChatInfo.SendChatMessage(L["You have been removed from the queue."], "WHISPER", nil, player)
 			else
-				SendChatMessage(L["Decline the group invitation."], "WHISPER", nil, player)
+				C_ChatInfo.SendChatMessage(L["Decline the group invitation."], "WHISPER", nil, player)
 			end
 		end
 	end
 end
 
 function addon:CHAT_MSG_BN_WHISPER(_, msg, ...)
+	if issecretvalue(msg) then return end
+
 	if not self.db.profile.enabled then return end
 	local db = self.db.profile
-	
+
 	if db.guildOnly and not db.friendsAllowed then return end
 	if not db.BNetWhispers then return end
-	
-	-- local _, _, _, _, _, _, _, _, _, _, _, presenceID = ...
+
 	local presenceID = select(12, ...)
-	-- if (string.find(string.lower(msg), "^"..db.keyword.."$")) then
+
+	if issecretvalue(presenceID) then return end
+
 	if MatchKeywords(msg) then
-	
+
 		local playerIsInQueue, invited, numberInQueue = BNisInQueue(presenceID)
 		if playerIsInQueue then
 			if not invited then
-				BNSendWhisper(presenceID,string.format(L["You are #%s in the queue."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword))
+				C_BattleNet.SendWhisper(presenceID,string.format(L["You are #%s in the queue."],numberInQueue).." "..string.format(L["Whisper '%s' to be removed."],db.removeKeyword))
 			else
-				BNSendWhisper(presenceID,L["Accept the group invitation, please."])
+				C_BattleNet.SendWhisper(presenceID,L["Accept the group invitation, please."])
 			end
 			return
 		end
@@ -1021,6 +1026,7 @@ end
 ]]--
 function addon:PARTY_INVITE_REQUEST(event, player, isTank, isHealer, isDamage, isNativeRealm, allowMultipleRoles, guid, questSessionActive)
 	-- if not self.db.profile.enabled then return end
+	if issecretvalue(guid) then return end
 	if not self.db.profile.autoJoin then return end
 	if IsGuildMember(guid) or PlayerIsFriend(guid) then
 		AcceptGroup()
